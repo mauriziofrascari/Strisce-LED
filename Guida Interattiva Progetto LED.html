@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="it" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guida Interattiva Progetto LED</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Chosen Palette: Warm Neutral Indigo (bg-gray-50, white, text-gray-800, indigo-600 accent) -->
+    <!-- Application Structure Plan: Designed a task-oriented, multi-section single-page application. Instead of a linear report, it's structured by user *tasks*: 1. 'Progettazione' (to explore LED options), 2. 'Calcolatori' (to size their specific project interactively), 3. 'Teoria' (as a reference), 4. 'Sicurezza' (with a warning chart). This non-linear, interactive flow (guided by a top nav) is more usable for someone *building* a project than a static report. -->
+    <!-- Visualization & Content Choices: Report Info (Table 4.2.1 - Safety Thresholds) -> Goal: Warn, Impact -> Viz: Bar Chart (Chart.js) -> Interaction: Hover Tooltip -> Justification: A red/yellow/green bar chart is far more impactful for safety warnings than a static table. Report Info (Cap 3.1, 3.2, 4.1 - Sizing Calculations) -> Goal: Apply, Calculate -> Viz: HTML Forms + JS -> Interaction: Real-time calculation on input -> Justification: Turns static examples into a usable tool for the user's *own* project. Report Info (Tables 1.1.3, 1.2.3 - LED data) -> Goal: Inform, Compare -> Viz: Styled HTML tables. NO SVG/Mermaid used. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f9fafb;
+            color: #1f2937;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 280px;
+            max-height: 350px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 320px;
+            }
+        }
+        .calc-output {
+            background-color: #f3f4f6;
+            border-left: 4px solid #4f46e5;
+            padding: 8px 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 0 4px 4px 0;
+        }
+        .calc-label {
+            font-weight: 500;
+            color: #374151;
+        }
+        .calc-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white shadow-sm sticky top-0 z-10 border-b border-gray-200">
+        <nav class="container mx-auto px-4 md:px-8 py-4 flex justify-between items-center">
+            <h1 class="text-xl md:text-2xl font-bold text-indigo-600">Guida Interattiva Progetto LED</h1>
+            <div class="space-x-4 hidden md:block">
+                <a href="#progettazione" class="text-gray-600 hover:text-indigo-600 font-medium">Progettazione</a>
+                <a href="#calcolatori" class="text-gray-600 hover:text-indigo-600 font-medium">Calcolatori</a>
+                <a href="#teoria" class="text-gray-600 hover:text-indigo-600 font-medium">Teoria</a>
+                <a href="#sicurezza" class="text-gray-600 hover:text-indigo-600 font-medium">Sicurezza</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-8 space-y-16">
+
+        <section id="progettazione" class="pt-12">
+            <h2 class="text-3xl font-bold text-gray-800 mb-4">Cap. 1: Progettazione e Scelta del LED</h2>
+            <p class="text-lg text-gray-600 mb-8">
+                Un buon progetto di illuminazione non parte dai Watt, ma dalla luce. L'obiettivo è definire *quanta* luce serve (misurata in Lux) e *dove*, per poi selezionare la sorgente luminosa (in Lumen) adeguata.
+            </p>
+
+            <div class="grid md:grid-cols-2 gap-8 mb-12">
+                <div class="bg-white p-6 rounded-lg shadow-md border border-gray-100">
+                    <h3 class="text-xl font-semibold text-indigo-700 mb-4">Principi: Lumen e Lux</h3>
+                    <p class="mb-4">Per scegliere correttamente, distinguiamo:</p>
+                    <ul class="space-y-3">
+                        <li><strong class="text-gray-900">Flusso Luminoso (Lumen - lm):</strong> La quantità *totale* di luce emessa da una sorgente (es. 800 lm/m).</li>
+                        <li><strong class="text-gray-900">Illuminamento (Lux - lx):</strong> La quantità di luce che *raggiunge* una superficie (1 lx = 1 lm/m<sup>2</sup>).</li>
+                    </ul>
+                    <h4 class="font-semibold text-gray-900 mt-6 mb-3">Livelli di Illuminamento Consigliati</h4>
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="p-3 border-b">Ambiente / Attività</th>
+                                <th class="p-3 border-b text-right">Illuminamento (Lux)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b">
+                                <td class="p-3">Corridoi, zone di passaggio</td>
+                                <td class="p-3 text-right">100 - 200 lx</td>
+                            </tr>
+                            <tr class="border-b">
+                                <td class="p-3">Soggiorno, relax</td>
+                                <td class="p-3 text-right">200 - 300 lx</td>
+                            </tr>
+                            <tr class="border-b">
+                                <td class="p-3">Cucine (piano lavoro), Uffici</td>
+                                <td class="p-3 text-right">500 - 750 lx</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3">Lavori di precisione</td>
+                                <td class="p-3 text-right">1000+ lx</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md border border-gray-100">
+                    <h3 class="text-xl font-semibold text-indigo-700 mb-4">Processo di Scelta</h3>
+                    <p class="mb-4">Segui questo processo logico per trovare la striscia giusta:</p>
+                    <ol class="list-decimal list-inside space-y-4">
+                        <li>
+                            <strong class="text-gray-900">Stabilisci i Lux Desiderati:</strong>
+                            Decidi l'obiettivo dall'illuminamento (vedi tabella).
+                            <br>(Es. 500 lx per il piano cucina).
+                        </li>
+                        <li>
+                            <strong class="text-gray-900">Calcola i Lumen Totali:</strong>
+                            Moltiplica i Lux per l'area da illuminare.
+                            <br>Lumen = Lux x Area (m<sup>2</sup>)
+                            <br>(Es. 500 lx x 1.8 m<sup>2</sup> = 900 lm).
+                        </li>
+                        <li>
+                            <strong class="text-gray-900">Scegli la Striscia (lm/m):</strong>
+                            Dividi i Lumen totali per la lunghezza della striscia.
+                            <br>(Es. 900 lm / 3 m = 300 lm/m).
+                        </li>
+                    </ol>
+                </div>
+            </div>
+
+            <h3 class="text-2xl font-semibold text-gray-800 mb-4">Tipologie di Strisce LED (60 LED/m)</h3>
+            <div class="overflow-x-auto bg-white rounded-lg shadow-md border border-gray-100">
+                <table class="w-full min-w-[700px] text-left">
+                    <thead class="bg-gray-100 border-b border-gray-200">
+                        <tr>
+                            <th class="p-4 font-semibold">Tipo di Chip (SMD)</th>
+                            <th class="p-4 font-semibold">Potenza Tipica (W/m)</th>
+                            <th class="p-4 font-semibold">Flusso Luminoso (lm/m)</th>
+                            <th class="p-4 font-semibold">Utilizzo Consigliato</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        <tr>
+                            <td class="p-4 font-medium">3528</td>
+                            <td class="p-4">4.0 - 5.0</td>
+                            <td class="p-4">250 - 450 lm/m</td>
+                            <td class="p-4">Illuminazione d'accento, decorazione.</td>
+                        </tr>
+                        <tr>
+                            <td class="p-4 font-medium">5050</td>
+                            <td class="p-4">8.0 - 12.0</td>
+                            <td class="p-4">500 - 900 lm/m</td>
+                            <td class="p-4">Illuminazione media, sotto-pensili, RGB.</td>
+                        </tr>
+                        <tr>
+                            <td class="p-4 font-medium">2835</td>
+                            <td class="p-4">8.0 - 10.0</td>
+                            <td class="p-4">800 - 1200 lm/m</td>
+                            <td class="p-4">Illuminazione generale/lavoro (efficiente).</td>
+                        </tr>
+                        <tr>
+                            <td class="p-4 font-medium">5630</td>
+                            <td class="p-4">12.0 - 18.0</td>
+                            <td class="p-4">1000 - 1600 lm/m</td>
+                            <td class="p-4">Illuminazione principale, alta luminosità.</td>
+                        </tr>
+                        <tr>
+                            <td class="p-4 font-medium">COB</td>
+                            <td class="p-4">8.0 - 15.0</td>
+                            <td class="p-4">900 - 1500 lm/m</td>
+                            <td class="p-4">Luce uniforme, strisce a vista.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <hr class="border-t border-gray-200">
+
+        <section id="calcolatori" class="pt-12">
+            <h2 class="text-3xl font-bold text-gray-800 mb-4">Cap. 2: Calcolatori Interattivi</h2>
+            <p class="text-lg text-gray-600 mb-8">
+                Usa questi strumenti per dimensionare correttamente il tuo progetto. Inserisci i dati della tua striscia LED e ottieni i requisiti per l'alimentazione, l'autonomia e i cavi.
+            </p>
+
+            <div class="grid lg:grid-cols-3 gap-8">
+                <div class="bg-white p-6 rounded-lg shadow-md border border-gray-100 space-y-5">
+                    <h3 class="text-xl font-semibold text-indigo-700 mb-3">Fabbisogno Elettrico e Alimentatore</h3>
+                    <div>
+                        <label for="calc-length" class="calc-label">Lunghezza striscia (metri):</label>
+                        <input type="number" id="calc-length" class="calc-input" value="5">
+                    </div>
+                    <div>
+                        <label for="calc-power-meter" class="calc-label">Potenza striscia (W/m):</label>
+                        <input type="number" id="calc-power-meter" class="calc-input" value="9.6">
+                    </div>
+                    <div>
+                        <label for="calc-voltage" class="calc-label">Tensione striscia (Volt):</label>
+                        <input type="number" id="calc-voltage" class="calc-input" value="12">
+                    </div>
+                    <div class="space-y-3 pt-3">
+                        <h4 class="font-semibold text-gray-900">Risultati:</h4>
+                        <div class="calc-output" id="output-power">Potenza Totale: 48.0 W</div>
+                        <div class="calc-output" id="output-current">Corrente Totale: 4.0 A</div>
+                        <div class="calc-output" id="output-psu">Potenza Alimentatore (min.): 57.6 W</div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-md border border-gray-100 space-y-5">
+                    <h3 class="text-xl font-semibold text-indigo-700 mb-3">Autonomia Batteria</h3>
+                    <div>
+                        <label for="calc-capacity-wh" class="calc-label">Capacità batteria (Wh):</label>
+                        <input type="number" id="calc-capacity-wh" class="calc-input" value="100">
+                    </div>
+                    <div>
+                        <label for="calc-power-strip" class="calc-label">Potenza striscia (W totali):</label>
+                        <input type="number" id="calc-power-strip" class="calc-input" value="48">
+                    </div>
+                    <div class="space-y-3 pt-3">
+                        <h4 class="font-semibold text-gray-900">Risultato:</h4>
+                        <div class="calc-output" id="output-autonomy-wh">Autonomia (Wh): ~2.08 ore</div>
+                    </div>
+                    
+                    <div class="border-t pt-5 space-y-5">
+                        <label for="calc-capacity-ah" class="calc-label">Capacità batteria (Ah) (solo se V è uguale):</label>
+                        <input type="number" id="calc-capacity-ah" class="calc-input" value="20">
+                    </div>
+                    <div>
+                        <label for="calc-current-strip" class="calc-label">Corrente striscia (A totali):</label>
+                        <input type="number" id="calc-current-strip" class="calc-input" value="4">
+                    </div>
+                    <div class="space-y-3 pt-3">
+                        <h4 class="font-semibold text-gray-900">Risultato:</h4>
+                        <div class="calc-output" id="output-autonomy-ah">Autonomia (Ah): ~5.00 ore</div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-md border border-gray-100 space-y-5">
+                    <h3 class="text-xl font-semibold text-indigo-700 mb-3">Caduta di Tensione Cavo</h3>
+                    <p class="text-sm text-gray-500">Importante per cavi lunghi. Una caduta > 3-5% riduce la luminosità.</p>
+                    <div>
+                        <label for="calc-cable-length" class="calc-label">Distanza alimentatore-striscia (metri):</label>
+                        <input type="number" id="calc-cable-length" class="calc-input" value="10">
+                    </div>
+                    <div>
+                        <label for="calc-cable-current" class="calc-label">Corrente striscia (A totali):</label>
+                        <input type="number" id="calc-cable-current" class="calc-input" value="4">
+                    </div>
+                    <div>
+                        <label for="calc-cable-section" class="calc-label">Sezione cavo (mm²):</label>
+                        <select id="calc-cable-section" class="calc-input">
+                            <option value="0.75">0.75 mm²</option>
+                            <option value="1">1 mm²</option>
+                            <option value="1.5">1.5 mm²</option>
+                            <option value="2.5">2.5 mm²</option>
+                            <option value="4" selected>4 mm²</option>
+                            <option value="6">6 mm²</option>
+                        </select>
+                    </div>
+                    <div class="space-y-3 pt-3">
+                        <h4 class="font-semibold text-gray-900">Risultato:</h4>
+                        <div class="calc-output" id="output-voltage-drop">Caduta di Tensione: ~0.35 V (2.9%)</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <hr class="border-t border-gray-200">
+
+        <section id="teoria" class="pt-12">
+            <h2 class="text-3xl font-bold text-gray-800 mb-4">Cap. 3: Basi Teoriche</h2>
+            <p class="text-lg text-gray-600 mb-8">
+                I calcolatori funzionano grazie a poche leggi fondamentali. Comprendere queste basi ti aiuta a risolvere problemi e a progettare con sicurezza.
+            </p>
+
+            <h3 class="text-2xl font-semibold text-gray-800 mb-6">Le 4 Grandezze (Analogia Idraulica)</h3>
+            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                <div class="bg-white p-6 rounded-lg shadow-md border border-gray-100">
+                    <h4 class="text-lg font-bold text-indigo-700">Tensione (V)</h4>
+                    <p class="font-semibold">Volt</p>
+                    <p class="mt-2 text-gray-600">La "pressione" dell'acqua. È la forza che spinge gli elettroni.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md border border-gray-100">
+                    <h4 class="text-lg font-bold text-indigo-700">Corrente (I)</h4>
+                    <p class="font-semibold">Ampere</p>
+                    <p class="mt-2 text-gray-600">La "portata" dell'acqua. È il flusso di elettroni che scorre.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md border border-gray-100">
+                    <h4 class="text-lg font-bold text-indigo-700">Resistenza (R)</h4>
+                    <p class="font-semibold">Ohm (Ω)</p>
+                    <p class="mt-2 text-gray-600">Il "restringimento" del tubo. È l'ostacolo al flusso di corrente.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md border border-gray-100">
+                    <h4 class="text-lg font-bold text-indigo-700">Potenza (P)</h4>
+                    <p class="font-semibold">Watt</p>
+                    <p class="mt-2 text-gray-600">Il "lavoro" fatto. È il risultato di pressione e flusso (V x I).</p>
+                </div>
+            </div>
+
+            <h3 class="text-2xl font-semibold text-gray-800 mb-6">Leggi Fondamentali</h3>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-lg shadow-md border border-gray-100">
+                    <h4 class="text-xl font-semibold text-gray-900 mb-4">Legge di Ohm</h4>
+                    <p class="text-2xl font-mono font-medium text-center bg-gray-100 p-4 rounded-md">V = I &middot; R</p>
+                    <p class="mt-4">La Tensione è uguale alla Corrente per la Resistenza.</p>
+                    <ul class="list-disc list-inside mt-2 space-y-1">
+                        <li>I = V / R</li>
+                        <li>R = V / I</li>
+                    </ul>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md border border-gray-100">
+                    <h4 class="text-xl font-semibold text-gray-900 mb-4">Legge della Potenza</h4>
+                    <p class="text-2xl font-mono font-medium text-center bg-gray-100 p-4 rounded-md">P = V &middot; I</p>
+                    <p class="mt-4">La Potenza è uguale alla Tensione per la Corrente.</p>
+                    <ul class="list-disc list-inside mt-2 space-y-1">
+                        <li>P = I<sup>2</sup> &middot; R (dissipazione calore)</li>
+                        <li>P = V<sup>2</sup> / R</li>
+                    </ul>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md border border-gray-100 md:col-span-2">
+                    <h4 class="text-xl font-semibold text-gray-900 mb-4">Potenza (Watt) vs. Energia (Wattora)</h4>
+                    <p class="mb-2">Questa è la distinzione più importante per i consumi:</p>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li><strong>Potenza (W):</strong> È la velocità *istantanea* di consumo. (Es. 48 W richiesti dalla striscia *ora*).</li>
+                        <li><strong>Energia (Wh):</strong> È il consumo *totale* nel tempo. (Es. 48 W per 2 ore = 96 Wh consumati).</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <hr class="border-t border-gray-200">
+
+        <section id="sicurezza" class="pt-12">
+            <h2 class="text-3xl font-bold text-red-600 mb-4">Cap. 4: Avvisi di Sicurezza</h2>
+            <p class="text-lg text-gray-600 mb-8">
+                Lavorare con l'elettricità richiede la massima attenzione. La grandezza più pericolosa per il corpo umano non è la Tensione, ma l'**Intensità di Corrente (I)**.
+            </p>
+
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-lg shadow-md border border-gray-100">
+                    <h3 class="text-xl font-semibold text-gray-900 mb-4">Effetti Fisiologici della Corrente (AC)</h3>
+                    <p class="mb-4">La Tensione (V) è solo il "motore" che spinge la corrente (I) attraverso la resistenza (R) del tuo corpo. La 220V di casa è letale perché può facilmente spingere più di 75mA attraverso il corpo.</p>
+                    <ul class="space-y-3">
+                        <li><strong>AC (Corrente Alternata):</strong> Considerata più pericolosa della DC (Corrente Continua) perché la frequenza di $50/60 Hz$ interferisce facilmente con il ritmo cardiaco e causa contrazioni muscolari (rischio di "non rilascio").</li>
+                        <li><strong>Fibrillazione Ventricolare:</strong> L'arresto cardiaco causato da una corrente che disturba il cuore. È la principale causa di morte per folgorazione.</li>
+                    </ul>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-md border border-gray-100">
+                    <h3 class="text-xl font-semibold text-gray-900 mb-4">Soglie di Pericolo (Corrente AC)</h3>
+                    <div class="chart-container">
+                        <canvas id="safetyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-gray-800 text-gray-300 mt-16">
+        <div class="container mx-auto p-8 text-center">
+            <p>Questa è un'applicazione web interattiva generata da un'IA, basata sul "Report Completo: Progettazione LED e Fondamenti di Elettrotecnica".</p>
+            <p class="text-sm text-gray-400 mt-2">I calcoli sono a scopo illustrativo. Verificare sempre con un professionista prima di eseguire lavori elettrici.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const $ = (selector) => document.getElementById(selector);
+
+            const calcLength = $('calc-length');
+            const calcPowerMeter = $('calc-power-meter');
+            const calcVoltage = $('calc-voltage');
+            const outputPower = $('output-power');
+            const outputCurrent = $('output-current');
+            const outputPsu = $('output-psu');
+
+            const calcCapacityWh = $('calc-capacity-wh');
+            const calcPowerStrip = $('calc-power-strip');
+            const outputAutonomyWh = $('output-autonomy-wh');
+
+            const calcCapacityAh = $('calc-capacity-ah');
+            const calcCurrentStrip = $('calc-current-strip');
+            const outputAutonomyAh = $('output-autonomy-ah');
+
+            const calcCableLength = $('calc-cable-length');
+            const calcCableCurrent = $('calc-cable-current');
+            const calcCableSection = $('calc-cable-section');
+            const outputVoltageDrop = $('output-voltage-drop');
+
+            const RHO_COPPER = 0.0175;
+
+            function calculateElectricalNeeds() {
+                const length = parseFloat(calcLength.value) || 0;
+                const powerMeter = parseFloat(calcPowerMeter.value) || 0;
+                const voltage = parseFloat(calcVoltage.value) || 0;
+
+                if (length > 0 && powerMeter > 0 && voltage > 0) {
+                    const powerTotal = length * powerMeter;
+                    const currentTotal = powerTotal / voltage;
+                    const psuPower = powerTotal * 1.20;
+
+                    outputPower.textContent = `Potenza Totale: ${powerTotal.toFixed(1)} W`;
+                    outputCurrent.textContent = `Corrente Totale: ${currentTotal.toFixed(1)} A`;
+                    outputPsu.textContent = `Potenza Alimentatore (min.): ${psuPower.toFixed(1)} W`;
+                    
+                    calcPowerStrip.value = powerTotal.toFixed(1);
+                    calcCableCurrent.value = currentTotal.toFixed(1);
+                    
+                    calculateBatteryLifeWh();
+                    calculateBatteryLifeAh();
+                    calculateVoltageDrop();
+                }
+            }
+
+            function calculateBatteryLifeWh() {
+                const capacityWh = parseFloat(calcCapacityWh.value) || 0;
+                const powerStrip = parseFloat(calcPowerStrip.value) || 0;
+                
+                if (capacityWh > 0 && powerStrip > 0) {
+                    const autonomy = capacityWh / powerStrip;
+                    outputAutonomyWh.textContent = `Autonomia (Wh): ~${autonomy.toFixed(2)} ore`;
+                }
+            }
+            
+            function calculateBatteryLifeAh() {
+                const capacityAh = parseFloat(calcCapacityAh.value) || 0;
+                const currentStrip = parseFloat(calcCurrentStrip.value) || 0;
+                
+                if (capacityAh > 0 && currentStrip > 0) {
+                    const autonomy = capacityAh / currentStrip;
+                    outputAutonomyAh.textContent = `Autonomia (Ah): ~${autonomy.toFixed(2)} ore`;
+                }
+            }
+
+            function calculateVoltageDrop() {
+                const length = parseFloat(calcCableLength.value) || 0;
+                const current = parseFloat(calcCableCurrent.value) || 0;
+                const section = parseFloat(calcCableSection.value) || 0.75;
+                const voltage = parseFloat(calcVoltage.value) || 12;
+
+                if (length > 0 && current > 0 && section > 0) {
+                    const totalCableLength = length * 2;
+                    const resistance = (RHO_COPPER * totalCableLength) / section;
+                    const voltageDrop = current * resistance;
+                    const dropPercentage = (voltageDrop / voltage) * 100;
+
+                    let colorClass = 'text-green-600';
+                    if (dropPercentage > 3 && dropPercentage <= 5) {
+                        colorClass = 'text-yellow-600';
+                    } else if (dropPercentage > 5) {
+                        colorClass = 'text-red-600';
+                    }
+                    
+                    outputVoltageDrop.innerHTML = `Caduta: <span class="${colorClass}">${voltageDrop.toFixed(2)} V (${dropPercentage.toFixed(1)}%)</span>`;
+                }
+            }
+
+            [calcLength, calcPowerMeter, calcVoltage].forEach(el => {
+                el.addEventListener('input', calculateElectricalNeeds);
+            });
+            [calcCapacityWh, calcPowerStrip].forEach(el => {
+                el.addEventListener('input', calculateBatteryLifeWh);
+            });
+            [calcCapacityAh, calcCurrentStrip].forEach(el => {
+                el.addEventListener('input', calculateBatteryLifeAh);
+            });
+            [calcCableLength, calcCableCurrent, calcCableSection, calcVoltage].forEach(el => {
+                el.addEventListener('input', calculateVoltageDrop);
+            });
+
+            calculateElectricalNeeds();
+
+            const ctx = document.getElementById('safetyChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Percezione', 'Rischio "Non Rilascio"', 'Fibrillazione (Letale)'],
+                    datasets: [{
+                        label: 'Corrente (mA)',
+                        data: [1, 15, 80],
+                        backgroundColor: [
+                            'rgba(74, 222, 128, 0.6)',
+                            'rgba(250, 204, 21, 0.6)',
+                            'rgba(239, 68, 68, 0.6)'
+                        ],
+                        borderColor: [
+                            'rgba(34, 197, 94, 1)',
+                            'rgba(245, 158, 11, 1)',
+                            'rgba(220, 38, 38, 1)'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    let value = context.parsed.y;
+                                    if (context.dataIndex === 0) label = 'Soglia Percezione: ~1 mA';
+                                    if (context.dataIndex === 1) label = 'Contrazione Muscolare: 10-20 mA';
+                                    if (context.dataIndex === 2) label = 'Fibrillazione Letale: 75-100 mA';
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Corrente (mA)'
+                            }
+                        }
+                    }
+                }
+            });
+
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    if(this.hash !== "") {
+                        e.preventDefault();
+                        const hash = this.hash;
+                        const targetElement = document.querySelector(hash);
+                        if(targetElement) {
+                            targetElement.scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'start'
+                            });
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
